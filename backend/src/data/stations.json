@@ -1,0 +1,68 @@
+[
+  {
+    "crs": "PAD",
+    "name": "London Paddington",
+    "description": "London Paddington",
+    "category": "A"
+  },
+  {
+    "crs": "KGX",
+    "name": "London King's Cross",
+    "description": "London King's Cross",
+    "category": "A"
+  },
+  {
+    "crs": "WAT",
+    "name": "London Waterloo",
+    "description": "London Waterloo",
+    "category": "A"
+  },
+  {
+    "crs": "VIC",
+    "name": "London Victoria",
+    "description": "London Victoria",
+    "category": "A"
+  },
+  {
+    "crs": "LIV",
+    "name": "Liverpool Lime Street",
+    "description": "Liverpool Lime Street",
+    "category": "A"
+  },
+  {
+    "crs": "MAN",
+    "name": "Manchester Piccadilly",
+    "description": "Manchester Piccadilly",
+    "category": "A"
+  },
+  {
+    "crs": "BHM",
+    "name": "Birmingham New Street",
+    "description": "Birmingham New Street",
+    "category": "A"
+  },
+  {
+    "crs": "EDB",
+    "name": "Edinburgh Waverley",
+    "description": "Edinburgh Waverley",
+    "category": "A"
+  },
+  {
+    "crs": "GLC",
+    "name": "Glasgow Central",
+    "description": "Glasgow Central",
+    "category": "A"
+  },
+  {
+    "crs": "LDS",
+    "name": "Leeds",
+    "description": "Leeds",
+    "category": "A"
+  },
+  {
+    "crs": "LMR",
+    "name": "Low Moor",
+    "description": "Low Moor",
+    "category": "C"
+  }
+]

@@ -1,0 +1,67 @@
+# StationBoard Development Guidelines
+
+## Git Workflow
+
+- All new features must be developed in feature branches (`feature/*`)
+- All bug fixes must be developed in bugfix branches (`bugfix/*`)
+- Create draft PRs for work-in-progress: `gh pr create --draft`
+- Mark PR ready when complete: `gh pr ready`
+- Never merge directly to main without PR review
+
+## Security
+
+- NEVER commit `.env` files or actual credentials
+- Use `.env.example` for template credentials
+- Store credentials in Docker secrets or environment variables only
+- Always validate input data (especially CRS codes)
+- Use rate limiting on public API endpoints
+
+## Code Quality
+
+- Run linting before committing: `npm run lint`
+- Format code with Prettier: `npm run format`
+- Use TypeScript strict mode
+- Write clear commit messages using conventional commits
+- Add inline comments for complex logic
+
+## Testing
+
+- Test WebSocket connections before deploying
+- Verify station CRS codes before making API calls
+- Test flap animations across different viewport sizes
+- Validate Docker containers start successfully
+
+## Docker
+
+- Use multi-stage builds for smaller images
+- Include health checks in all containers
+- Never hard-code credentials in docker-compose.yml
+- Use Alpine-based images where possible
+
+## API Integration
+
+- Handle STOMP connection errors gracefully
+- Implement exponential backoff for reconnection
+- Cache station list data (static, refresh daily)
+- Filter train data on backend, not frontend
+- Log all API errors for debugging
+
+## Frontend
+
+- Use semantic HTML for accessibility
+- Implement responsive design for mobile/tablet
+- Optimize flap animations for performance
+- Handle WebSocket disconnections gracefully
+- Show loading states during data fetch
+
+## Pull Request Checklist
+
+Before creating a PR, ensure:
+- [ ] Code passes linting (`npm run lint`)
+- [ ] No console.log or debug statements
+- [ ] All TODO comments are documented
+- [ ] Commit messages follow conventional commits
+- [ ] .env variables are documented in README
+- [ ] Docker containers start successfully
+- [ ] No credentials are exposed in code
+
