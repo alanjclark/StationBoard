@@ -59,11 +59,9 @@ export default function StationBoard() {
 
         <StationSelector currentCRS={crs} />
 
-        <div className={`px-3 py-1 rounded font-mono text-xs ${
-          connected ? 'bg-green-500 text-black' : 'bg-red-500'
-        }`}>
-          {connected ? '● CONNECTED' : '● DISCONNECTED'}
-        </div>
+        <div className={`w-3 h-3 rounded-full ${
+          connected ? 'bg-green-500' : 'bg-red-500'
+        }`} title={connected ? 'Connected' : 'Disconnected'} />
       </div>
 
       {/* Board */}
