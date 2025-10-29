@@ -13,28 +13,49 @@ export default function BoardRow({ service }: BoardRowProps) {
   // Expected time (etd for departure, eta for arrival, fall back to scheduled if not available)
   const estimatedTime = service.etd || service.eta;
   const hasEstimatedTime = estimatedTime && estimatedTime.trim() !== '';
-  
-  // Check if train is actually delayed - compare estimated with scheduled
-  // Only mark as delayed if times are different
-  const estimatedTimeTrimmed = estimatedTime?.trim() || '';
-  const scheduledTimeTrimmed = scheduledTime?.trim() || '';
-  const isDelayed = hasEstimatedTime && 
-                    estimatedTimeTrimmed !== '' &&
-                    estimatedTimeTrimmed !== scheduledTimeTrimmed &&
-                    estimatedTime !== scheduledTime &&
-                    !service.isCancelled;
-  
   const expectedTime = hasEstimatedTime ? estimatedTime : scheduledTime;
+  
+  // Check if train is actually delayed
+  // A train is delayed only if the estimated time is LATER than the scheduled time
+  let isDelayed = false;
+  if (!service.isCancelled && hasEstimatedTime && estimatedTime !== scheduledTime) {
+    try {
+      const parseTime = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      };
+      
+      const scheduledMinutes = parseTime(scheduledTime);
+      const estimatedMinutes = parseTime(estimatedTime);
+      
+      // Calculate time difference, handling next-day wrap-around
+      const timeDiff = estimatedMinutes - scheduledMinutes;
+      const delayMinutes = timeDiff < 0 ? timeDiff + 1440 : timeDiff;
+      
+      // Only mark as delayed if estimated time is later (more than 1 minute difference)
+      isDelayed = delayMinutes > 1;
+    } catch (e) {
+      // If parsing fails, default to checking if times are different
+      isDelayed = estimatedTime !== scheduledTime;
+    }
+  }
   
   const destination = service.destination?.[0]?.location?.description || service.locationName || 'Unknown';
   const platform = service.platform || '--';
   
+  // Determine delay signals provided by Darwin that don't rely solely on time deltas
+  const hasDelaySignal = Boolean(
+    service.delayReason && service.delayReason.trim() !== ''
+  ) || Boolean(
+    service.overdueMessage && service.overdueMessage.trim() !== ''
+  ) || (hasEstimatedTime && /delayed/i.test(estimatedTime));
+
   // Format status based on train state
   let statusText = '';
-  
+
   if (service.isCancelled) {
     statusText = 'CANCELLED';
-  } else if (isDelayed) {
+  } else if (hasDelaySignal || isDelayed) {
     statusText = 'DELAYED';
   } else {
     statusText = 'ON TIME';
@@ -49,7 +70,7 @@ export default function BoardRow({ service }: BoardRowProps) {
       
       {/* Expected Time (if delayed) or blank */}
       <div className="text-yellow-300 text-xl">
-        {isDelayed && expectedTime !== scheduledTime ? expectedTime : ''}
+        {(hasDelaySignal || isDelayed) && expectedTime !== scheduledTime ? expectedTime : ''}
       </div>
       
       {/* Destination */}

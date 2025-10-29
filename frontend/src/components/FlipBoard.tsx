@@ -26,7 +26,7 @@ export default function FlipBoard({
         </div>
         
         {/* Header Row */}
-        <div className="grid grid-cols-[80px_100px_minmax(0,1fr)_80px_120px] gap-4 items-center mb-2 pb-2 border-b-2 border-gray-700 font-mono">
+        <div className="grid grid-cols-[80px_100px_minmax(0,1fr)_80px_120px] gap-4 items-center mb-2 pb-2 border-b-2 border-gray-700 font-mono px-4">
           <div className="text-white text-sm uppercase tracking-wide">Time</div>
           <div className="text-white text-sm uppercase tracking-wide">Expected</div>
           <div className="text-white text-sm uppercase tracking-wide">Destination</div>
