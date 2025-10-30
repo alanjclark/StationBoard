@@ -49,3 +49,86 @@ export interface BoardUpdate {
   type: 'departure' | 'arrival';
 }
 
+// Darwin Push Port XML Message Types
+export interface DarwinPportMessage {
+  $: { 
+    ts: string; 
+    version: string;
+    [key: string]: string;
+  };
+  uR?: DarwinUpdateRecord[] | DarwinUpdateRecord;
+  sR?: DarwinSnapshotRecord[] | DarwinSnapshotRecord;
+}
+
+export interface DarwinUpdateRecord {
+  $?: { seq?: string };
+  TS?: DarwinTrainStatus[] | DarwinTrainStatus;
+  schedule?: any[];
+  Association?: any[];
+  // Other message types discovered from actual messages
+  [key: string]: any;
+}
+
+export interface DarwinSnapshotRecord {
+  $?: { seq?: string };
+  [key: string]: any;
+}
+
+// Darwin Train Status message (TS type)
+export interface DarwinTrainStatus {
+  $?: {
+    rid: string;  // Running ID
+    uid: string;  // Unique ID
+    ssd: string;  // Scheduled start date
+  };
+  loc?: DarwinLocation[];
+  dept?: DarwinDeparture[];
+  arr?: DarwinArrival[];
+  is?: DarwinIntermediateStop[];
+  // Other fields discovered from actual messages
+  [key: string]: any;
+}
+
+export interface DarwinLocation {
+  $: {
+    tpl: string;  // TIPLOC
+    crs?: string; // CRS code
+    locname?: string;
+  };
+}
+
+export interface DarwinDeparture {
+  $: {
+    et?: string;  // Estimated time
+    etspec?: string; // Estimated time specification (L=late, E=early, DELAYED, etc.)
+    wta?: string; // Working time arrival
+    wtd?: string; // Working time departure
+    lat?: string; // Late running indicator (true when train is delayed)
+  };
+  platform?: Array<{ $: { val?: string } }>;
+  [key: string]: any;
+}
+
+export interface DarwinArrival {
+  $: {
+    et?: string;  // Estimated time
+    etspec?: string; // Estimated time specification (L=late, E=early, DELAYED, etc.)
+    wta?: string; // Working time arrival
+    wtd?: string; // Working time departure
+    lat?: string; // Late running indicator (true when train is delayed)
+  };
+  platform?: Array<{ $: { val?: string } }>;
+  [key: string]: any;
+}
+
+export interface DarwinIntermediateStop {
+  $: {
+    tpl: string;
+    crs?: string;
+    act?: string;
+    pta?: string;
+    ptd?: string;
+  };
+  [key: string]: any;
+}
+

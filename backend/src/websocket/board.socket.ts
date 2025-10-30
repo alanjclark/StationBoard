@@ -3,9 +3,13 @@ import { getDepartures, getArrivals } from '../services/darwin.service';
 import { 
   connectDarwinStomp, 
   isDarwinConnected,
-  filterMessagesForStation 
+  onDarwinMessage
 } from '../services/darwin.stomp';
-import type { BoardUpdate } from '../types/darwin';
+import {
+  shouldProcessMessage,
+  extractTrainServices
+} from '../services/darwin.parser';
+import type { BoardUpdate, DarwinPportMessage } from '../types/darwin';
 
 interface SubscribedStation {
   crs: string;
@@ -14,7 +18,6 @@ interface SubscribedStation {
 }
 
 const subscriptions = new Map<string, SubscribedStation>();
-const darwinMessageBuffer: any[] = [];
 let globalIO: Server | null = null;
 
 // Store IO instance for Darwin updates
@@ -25,42 +28,68 @@ export function setGlobalIO(io: Server) {
   try {
     if (!isDarwinConnected()) {
       console.log('Checking Darwin STOMP configuration...');
-      connectDarwinStomp(
-        (message) => {
-          darwinMessageBuffer.push(message);
-          console.log('Received Darwin message');
-          broadcastDarwinUpdate(message);
-        },
-        (status) => {
-          console.log(`Darwin connection status: ${status}`);
-          if (globalIO) {
-            globalIO.emit('darwin:status', { status, connected: isDarwinConnected() });
-          }
+      
+      const statusCallback = (status: string) => {
+        console.log(`Darwin connection status: ${status}`);
+        if (status === 'connected') {
+          console.log('✅ Using Darwin Push Port for real-time updates');
         }
+        if (globalIO) {
+          globalIO.emit('darwin:status', { status, connected: isDarwinConnected() });
+        }
+      };
+
+      const messageCallback = (message: DarwinPportMessage) => {
+        broadcastDarwinUpdate(message);
+      };
+
+      connectDarwinStomp(
+        messageCallback,
+        statusCallback
       );
+      
+      // Register callback for Darwin messages
+      onDarwinMessage(messageCallback);
+    } else {
+      console.log('✅ Darwin STOMP already connected - using push updates');
     }
   } catch (error: any) {
-    console.log('Darwin STOMP not available:', error.message);
-    console.log('Using REST API for train data instead');
+    console.log('⚠️ Darwin STOMP not available:', error.message);
+    console.log('   Using REST API polling for train data instead');
   }
 }
 
 /**
  * Broadcast Darwin updates to subscribed clients
+ * Now properly parses and filters messages by station
  */
-function broadcastDarwinUpdate(message: any) {
+function broadcastDarwinUpdate(message: DarwinPportMessage) {
   if (!globalIO) return;
   
   // Broadcast to all subscribed clients
   for (const [key, subscription] of subscriptions.entries()) {
-    // TODO: Parse message and filter for this station
+    const socketId = key.split(':')[0];
+    
+    // Check if message is relevant for this station
+    if (!shouldProcessMessage(message, subscription.crs)) {
+      continue;
+    }
+    
+    // Extract train services from Darwin message
+    const services = extractTrainServices(message, subscription.crs, subscription.type);
+    
+    if (services.length === 0) {
+      continue;
+    }
+    
     const update: BoardUpdate = {
       stationCRS: subscription.crs,
-      services: [], // Will be populated from Darwin message
+      services,
       lastUpdate: new Date().toISOString(),
       type: subscription.type,
     };
-    globalIO.to(key.split(':')[0]).emit('board:update', update);
+    
+    globalIO.to(socketId).emit('board:update', update);
   }
 }
 
@@ -85,11 +114,21 @@ export default function boardSocket(io: Server, socket: Socket) {
       clearInterval(existing.intervalId);
     }
 
-    // Create new subscription
+    // Determine if using Darwin push or REST polling
+    const useDarwinPush = isDarwinConnected();
+    
+    if (useDarwinPush) {
+      console.log(`  Using Darwin push for ${crs}`);
+    } else {
+      console.log(`  Using REST polling for ${crs}`);
+    }
+
+    // Create subscription with appropriate update mechanism
     const subscription: SubscribedStation = {
       crs,
       type,
-      intervalId: setInterval(async () => {
+      // Only create polling interval if Darwin push is NOT available
+      intervalId: useDarwinPush ? {} as NodeJS.Timeout : setInterval(async () => {
         try {
           const services = type === 'departure' 
             ? await getDepartures(crs)

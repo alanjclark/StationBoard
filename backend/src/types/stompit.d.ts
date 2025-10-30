@@ -7,7 +7,11 @@ declare module 'stompit' {
 
   interface Message {
     readString(encoding: string, callback: (error?: Error, body?: string) => void): void;
+    on(event: string, callback: (...args: any[]) => void): void;
+    read(): Buffer | null;
   }
+
+  export function connect(options: ConnectOptions, callback: (error?: Error, client?: any) => void): void;
 
   export class Client {
     constructor(options: ConnectOptions);
@@ -15,6 +19,7 @@ declare module 'stompit' {
     connect(callback: (error?: Error, stompClient?: any) => void): void;
     subscribe(headers: Record<string, string>, callback: (error?: Error, message?: Message) => void): void;
     disconnect(callback: () => void): void;
+    ack(message: Message): void;
   }
   
   export interface Frame {
