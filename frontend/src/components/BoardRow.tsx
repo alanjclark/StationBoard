@@ -11,14 +11,21 @@ export default function BoardRow({ service }: BoardRowProps) {
   const scheduledTime = service.std || service.sta || '--:--';
   
   // Expected time (etd for departure, eta for arrival, fall back to scheduled if not available)
-  const estimatedTime = service.etd || service.eta;
-  const hasEstimatedTime = estimatedTime && estimatedTime.trim() !== '';
-  const expectedTime = hasEstimatedTime ? estimatedTime : scheduledTime;
+  let estimatedTime = service.etd || service.eta;
+  // Handle RDM API returning "On time" string instead of actual time
+  if (estimatedTime && (estimatedTime.toString().toLowerCase() === 'on time' || 
+                        estimatedTime.toString().toLowerCase().includes('time'))) {
+    estimatedTime = undefined;
+  }
+  const hasEstimatedTime = Boolean(estimatedTime && typeof estimatedTime === 'string' && 
+                                    estimatedTime.trim() !== '' && 
+                                    estimatedTime !== scheduledTime);
+  const expectedTime = (hasEstimatedTime && estimatedTime) ? estimatedTime : scheduledTime;
   
   // Check if train is actually delayed
   // A train is delayed only if the estimated time is LATER than the scheduled time
   let isDelayed = false;
-  if (!service.isCancelled && hasEstimatedTime && estimatedTime !== scheduledTime) {
+  if (!service.isCancelled && hasEstimatedTime && estimatedTime && estimatedTime !== scheduledTime) {
     try {
       const parseTime = (timeStr: string): number => {
         const [hours, minutes] = timeStr.split(':').map(Number);
@@ -26,7 +33,7 @@ export default function BoardRow({ service }: BoardRowProps) {
       };
       
       const scheduledMinutes = parseTime(scheduledTime);
-      const estimatedMinutes = parseTime(estimatedTime);
+      const estimatedMinutes = estimatedTime ? parseTime(estimatedTime) : scheduledMinutes;
       
       // Calculate time difference, handling next-day wrap-around
       const timeDiff = estimatedMinutes - scheduledMinutes;
@@ -36,7 +43,7 @@ export default function BoardRow({ service }: BoardRowProps) {
       isDelayed = delayMinutes > 1;
     } catch (e) {
       // If parsing fails, default to checking if times are different
-      isDelayed = estimatedTime !== scheduledTime;
+      isDelayed = Boolean(estimatedTime && estimatedTime !== scheduledTime);
     }
   }
   
@@ -48,7 +55,7 @@ export default function BoardRow({ service }: BoardRowProps) {
     service.delayReason && service.delayReason.trim() !== ''
   ) || Boolean(
     service.overdueMessage && service.overdueMessage.trim() !== ''
-  ) || (hasEstimatedTime && /delayed/i.test(estimatedTime));
+  ) || (estimatedTime && /delayed/i.test(estimatedTime));
 
   // Format status based on train state
   let statusText = '';
