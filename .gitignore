@@ -40,3 +40,8 @@ docker-compose.override.yml
 # Temporary files
 *.tmp
 .cache/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
